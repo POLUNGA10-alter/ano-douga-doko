@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { APP_CONFIG } from "@/config/app";
 import { useUserId } from "@/hooks/useUserId";
 
@@ -18,8 +18,31 @@ export default function ToolsPage() {
     }
   }, []);
 
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
   // ブックマークレットのコード
   const bookmarkletCode = `javascript:void(open('${baseUrl}/api/bookmark/quick?url='+encodeURIComponent(location.href)+'&user_id=${userId || "YOUR_USER_ID"}','_blank','width=420,height=320,top=100,left=100'))`;
+
+  // iOS ショートカット用の保存URL
+  const quickSaveUrl = userId
+    ? `${baseUrl}/api/bookmark/quick?user_id=${userId}&url=`
+    : null;
+
+  const handleCopyUrl = useCallback(async () => {
+    if (!quickSaveUrl) return;
+    try {
+      await navigator.clipboard.writeText(quickSaveUrl);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = quickSaveUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
+  }, [quickSaveUrl]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -27,25 +50,130 @@ export default function ToolsPage() {
         🔧 便利ツール
       </h1>
 
-      {/* PWA Share Target の説明 */}
+      {/* Android: PWA Share Target */}
       <section className="card mb-8">
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
-          📱 スマホからの保存（Share Target）
+          🤖 Android：共有メニューから保存
         </h2>
         <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          このアプリをホーム画面に追加（PWAインストール）すると、
-          他のアプリの「共有」ボタンから直接保存できます。
+          ホーム画面に追加すると、他アプリの「共有」ボタンから直接保存できます。
         </p>
         <div className="space-y-2 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
           <p className="text-sm text-gray-700 dark:text-gray-300">
-            <strong>iOS Safari：</strong> 共有ボタン → 「ホーム画面に追加」
-          </p>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
-            <strong>Android Chrome：</strong> メニュー → 「ホーム画面に追加」
+            <strong>Chrome：</strong> メニュー →「ホーム画面に追加」or「アプリをインストール」
           </p>
           <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
             インストール後、YouTubeやTikTok等で「共有」→「{APP_CONFIG.name}」で保存できます。
           </p>
+        </div>
+      </section>
+
+      {/* iOS: ショートカットで保存 */}
+      <section className="card mb-8">
+        <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
+          🍎 iPhone / iPad：ショートカットで保存
+        </h2>
+        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+          iOSの「ショートカット」アプリを使えば、共有メニューからワンタップで保存できます。
+        </p>
+
+        {/* あなたの保存用URL */}
+        <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-800 dark:bg-indigo-900/20">
+          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            📋 あなた専用の保存URL（ショートカットに貼り付けて使います）
+          </p>
+          {quickSaveUrl ? (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400 break-all">
+                {quickSaveUrl}
+              </code>
+              <button
+                onClick={handleCopyUrl}
+                className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+              >
+                {copiedUrl ? "✓ コピー済み" : "コピー"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⏳ 読み込み中...
+            </p>
+          )}
+        </div>
+
+        {/* 設定手順 */}
+        <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              1
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                「ショートカット」アプリを開く
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                iPhoneに最初から入っています。見つからない場合はApp Storeで「ショートカット」を検索
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              2
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                新規ショートカットを作成
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                右上の「＋」→ 名前を「🎬 動画どこに保存」に変更
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              3
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                「共有シートに表示」をON
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                上部の ℹ️ ボタン →「共有シートに表示」を有効に → 入力を「URL」のみに設定
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              4
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                アクションを追加
+              </p>
+              <div className="mt-1 space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+                <p>① 「テキスト」アクションを追加 → 上の保存URLを貼り付け</p>
+                <p>② 「テキストを結合」アクションを追加 → 「テキスト」と「ショートカットの入力」を結合</p>
+                <p>③ 「URLの内容を取得」アクションを追加 → 結合済みテキストを指定</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              5
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                完了！YouTube等で「共有」→「🎬 動画どこに保存」で保存
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                共有メニューに表示されない場合は、一番下の「アクションを編集」からONにしてください
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
