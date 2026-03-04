@@ -39,10 +39,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(fullUrl);
   const userId = searchParams.get("user_id");
 
-  // &url= 以降をすべてURLとして取得（iOSショートカット対応）
-  let url = extractUrlParam(fullUrl);
+  // URL取得: まず標準パース（エンコード済み対応）、次にiOSショートカット用の生パース
+  let url = searchParams.get("url");
   if (!url) {
-    url = searchParams.get("url");
+    // iOSショートカットがURLをエンコードせずに結合するケースに対応
+    url = extractUrlParam(fullUrl);
+  }
+  // extractUrlParam がエンコード済みURLを返した場合にデコード
+  if (url && url.includes("%3A%2F%2F")) {
+    try { url = decodeURIComponent(url); } catch { /* そのまま使う */ }
   }
 
   if (!url || !userId) {
