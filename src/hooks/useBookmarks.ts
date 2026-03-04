@@ -12,7 +12,7 @@ export type SortOrder = "newest" | "oldest" | "platform" | "custom";
  * ブックマークのCRUD操作を管理するhook
  */
 export function useBookmarks() {
-  const userId = useUserId();
+  const { userId } = useUserId();
   const [allBookmarks, setAllBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);

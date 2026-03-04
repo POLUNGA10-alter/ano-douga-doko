@@ -9,7 +9,7 @@ import { useUserId } from "@/hooks/useUserId";
  * /tools
  */
 export default function ToolsPage() {
-  const userId = useUserId();
+  const { userId, importUserId } = useUserId();
   const [baseUrl, setBaseUrl] = useState(APP_CONFIG.url as string);
 
   useEffect(() => {
@@ -19,6 +19,9 @@ export default function ToolsPage() {
   }, []);
 
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+  const [importInput, setImportInput] = useState("");
+  const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle");
 
   // ブックマークレットのコード
   const bookmarkletCode = `javascript:void(open('${baseUrl}/api/bookmark/quick?url='+encodeURIComponent(location.href)+'&user_id=${userId || "YOUR_USER_ID"}','_blank','width=420,height=320,top=100,left=100'))`;
@@ -43,6 +46,34 @@ export default function ToolsPage() {
     setCopiedUrl(true);
     setTimeout(() => setCopiedUrl(false), 2000);
   }, [quickSaveUrl]);
+
+  const handleCopyId = useCallback(async () => {
+    if (!userId) return;
+    try {
+      await navigator.clipboard.writeText(userId);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = userId;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  }, [userId]);
+
+  const handleImportId = useCallback(() => {
+    if (!importInput.trim()) return;
+    const ok = importUserId(importInput);
+    if (ok) {
+      setImportStatus("success");
+      setImportInput("");
+    } else {
+      setImportStatus("error");
+    }
+    setTimeout(() => setImportStatus("idle"), 3000);
+  }, [importInput, importUserId]);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -76,6 +107,22 @@ export default function ToolsPage() {
         <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
           iOSの「ショートカット」アプリを使えば、共有メニューからワンタップで保存できます。
         </p>
+
+        {/* Safari ↔ PWA 警告 */}
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
+          <p className="text-xs font-bold text-red-700 dark:text-red-400">
+            🚨 Safari と PWA（ホーム画面アプリ）では保存先が異なります！
+          </p>
+          <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
+            iOSでは Safari と ホーム画面に追加したアプリ（PWA）で<strong>別々のユーザーID</strong>が生成されます。
+            ショートカットを設定するときは、<strong>普段ブックマークを確認するアプリ</strong>（PWA or Safari）で
+            このページを開いて URL をコピーしてください。
+          </p>
+          <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
+            もし既にショートカットを設定済みで保存できない場合は、下の「🔑 ユーザーID管理」から
+            IDを同期してください。
+          </p>
+        </div>
 
         {/* あなたの保存用URL */}
         <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-800 dark:bg-indigo-900/20">
@@ -315,6 +362,79 @@ export default function ToolsPage() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ユーザーID管理 */}
+      <section className="card mb-8 mt-8">
+        <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
+          🔑 ユーザーID管理
+        </h2>
+        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
+          Safari ↔ PWA 間でブックマークを共有するには、同じユーザーIDを使う必要があります。
+        </p>
+
+        {/* 現在のID */}
+        <div className="mb-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
+          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            📍 このブラウザのユーザーID
+          </p>
+          {userId ? (
+            <div className="flex items-center gap-2">
+              <code className="flex-1 rounded bg-white px-2 py-1.5 text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-400 break-all font-mono select-all">
+                {userId}
+              </code>
+              <button
+                onClick={handleCopyId}
+                className="shrink-0 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-500"
+              >
+                {copiedId ? "✓ コピー済み" : "コピー"}
+              </button>
+            </div>
+          ) : (
+            <p className="text-xs text-amber-600">⏳ 読み込み中...</p>
+          )}
+        </div>
+
+        {/* IDインポート */}
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
+            📲 他のブラウザ / PWA から ID をインポート
+          </p>
+          <p className="mb-2 text-[10px] text-gray-500 dark:text-gray-400">
+            Safari で表示されている ID をコピーして、PWA のここに貼り付ける（またはその逆）ことで、
+            ブックマークの保存先を統一できます。
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={importInput}
+              onChange={(e) => setImportInput(e.target.value)}
+              placeholder="ここにIDをペースト..."
+              className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+            />
+            <button
+              onClick={handleImportId}
+              disabled={!importInput.trim()}
+              className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-40"
+            >
+              上書き保存
+            </button>
+          </div>
+          {importStatus === "success" && (
+            <p className="mt-2 text-xs text-green-600 dark:text-green-400">
+              ✅ IDを更新しました！ショートカットの保存URLも自動で更新されています。
+            </p>
+          )}
+          {importStatus === "error" && (
+            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+              ❌ 無効なIDです。正しい形式（UUID）のIDを入力してください。
+            </p>
+          )}
+          <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-400">
+            ⚠️ IDを変更すると、以前のIDで保存したブックマークは表示されなくなります。
+            元のIDをメモしておくことをお勧めします。
+          </p>
         </div>
       </section>
 

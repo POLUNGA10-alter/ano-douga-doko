@@ -27,7 +27,7 @@ interface SharedBookmark {
 function SharedCollectionContent() {
   const searchParams = useSearchParams();
   const encoded = searchParams.get("d");
-  const userId = useUserId();
+  const { userId } = useUserId();
   const [imgErrors, setImgErrors] = useState<Set<number>>(new Set());
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);

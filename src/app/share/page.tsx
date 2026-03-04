@@ -13,7 +13,7 @@ import { useUserId } from "@/hooks/useUserId";
  */
 function SharePageContent() {
   const searchParams = useSearchParams();
-  const userId = useUserId();
+  const { userId } = useUserId();
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
