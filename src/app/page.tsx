@@ -1,0 +1,231 @@
+"use client";
+
+import { useState } from "react";
+import { useBookmarks } from "@/hooks/useBookmarks";
+import BookmarkList from "@/components/BookmarkList";
+import TagFilter from "@/components/TagFilter";
+import PlatformFilter from "@/components/PlatformFilter";
+import AddBookmarkForm from "@/components/AddBookmarkForm";
+import SearchBar from "@/components/SearchBar";
+import SortSelector from "@/components/SortSelector";
+import EditBookmarkModal from "@/components/EditBookmarkModal";
+import BulkImportModal from "@/components/BulkImportModal";
+import ExportModal from "@/components/ExportModal";
+import ShareCollectionModal from "@/components/ShareCollectionModal";
+import ShareButtons from "@/components/ShareButtons";
+import AdBanner from "@/components/AdBanner";
+import { APP_CONFIG } from "@/config/app";
+import type { Bookmark } from "@/types/bookmark";
+
+/**
+ * トップページ（ブックマーク一覧）
+ */
+export default function Home() {
+  const {
+    bookmarks,
+    isLoading,
+    allTags,
+    activePlatforms,
+    platformCounts,
+    selectedTag,
+    setSelectedTag,
+    selectedPlatform,
+    setSelectedPlatform,
+    searchQuery,
+    setSearchQuery,
+    sortOrder,
+    setSortOrder,
+    addBookmark,
+    editBookmark,
+    deleteBookmark,
+    reorderBookmarks,
+    totalCount,
+    userId,
+  } = useBookmarks();
+
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [showShareCollection, setShowShareCollection] = useState(false);
+
+  const handleAddUrl = async (url: string) => {
+    return await addBookmark(url);
+  };
+
+  const handleEdit = (bookmark: Bookmark) => {
+    setEditingBookmark(bookmark);
+  };
+
+  const handleSaveEdit = async (
+    id: string,
+    updates: { title?: string; memo?: string; tags?: string[] }
+  ) => {
+    await editBookmark(id, updates);
+  };
+
+  const handleBulkImport = async (urls: string[]) => {
+    let success = 0;
+    let duplicates = 0;
+    let errors = 0;
+
+    for (const url of urls) {
+      try {
+        const result = await addBookmark(url);
+        if (result.duplicate) {
+          duplicates++;
+        } else {
+          success++;
+        }
+      } catch {
+        errors++;
+      }
+    }
+
+    return { success, duplicates, errors };
+  };
+
+  return (
+    <div className="flex flex-col items-center">
+      {/* ヒーローセクション */}
+      <section className="w-full bg-gradient-to-b from-primary-50 to-white px-4 py-12 text-center dark:from-primary-900/20 dark:to-gray-950">
+        <div className="mx-auto max-w-2xl">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white sm:text-4xl">
+            🎬 {APP_CONFIG.name}
+          </h1>
+          <p className="mb-6 text-base text-gray-600 dark:text-gray-400">
+            {APP_CONFIG.description}
+          </p>
+
+          {/* URL入力フォーム */}
+          <AddBookmarkForm onSubmit={handleAddUrl} />
+
+          {/* 一括インポートボタン */}
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <button
+              onClick={() => setShowBulkImport(true)}
+              className="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+            >
+              📦 URLをまとめてインポート
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <button
+              onClick={() => setShowExport(true)}
+              className="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+            >
+              📤 エクスポート
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <button
+              onClick={() => setShowShareCollection(true)}
+              className="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+            >
+              🔗 まとめシェア
+            </button>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <a
+              href="/tools"
+              className="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
+            >
+              🔧 便利ツール
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* フィルタ & 一覧 */}
+      <section className="w-full px-4 py-8">
+        <div className="mx-auto max-w-2xl space-y-4">
+          {/* 検索 & 並べ替え */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <SearchBar value={searchQuery} onChange={setSearchQuery} />
+            </div>
+            <SortSelector value={sortOrder} onChange={setSortOrder} />
+          </div>
+
+          {/* タグフィルタ */}
+          <TagFilter
+            tags={allTags}
+            selectedTag={selectedTag}
+            onSelect={setSelectedTag}
+          />
+
+          {/* プラットフォームフィルタ */}
+          <PlatformFilter
+            selectedPlatform={selectedPlatform}
+            onSelect={setSelectedPlatform}
+            activePlatforms={activePlatforms}
+            platformCounts={platformCounts}
+          />
+
+          {/* 件数表示 */}
+          {!isLoading && totalCount > 0 && (
+            <p className="text-xs text-gray-400">
+              {bookmarks.length === totalCount
+                ? `${totalCount}件`
+                : `${bookmarks.length}件 / ${totalCount}件`}
+            </p>
+          )}
+
+          {/* ブックマーク一覧 */}
+          <BookmarkList
+            bookmarks={bookmarks}
+            onDelete={deleteBookmark}
+            onEdit={handleEdit}
+            isLoading={isLoading}
+            totalCount={totalCount}
+            hasSearchQuery={searchQuery.length > 0}
+            isDndMode={sortOrder === "custom"}
+            onReorder={reorderBookmarks}
+          />
+        </div>
+      </section>
+
+      {/* 編集モーダル */}
+      <EditBookmarkModal
+        bookmark={editingBookmark}
+        allTags={allTags}
+        onSave={handleSaveEdit}
+        onClose={() => setEditingBookmark(null)}
+      />
+
+      {/* 一括インポートモーダル */}
+      {showBulkImport && (
+        <BulkImportModal
+          onImport={handleBulkImport}
+          onClose={() => setShowBulkImport(false)}
+        />
+      )}
+
+      {/* エクスポートモーダル */}
+      {showExport && (
+        <ExportModal
+          bookmarks={bookmarks}
+          onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {/* シェアコレクションモーダル */}
+      {showShareCollection && userId && (
+        <ShareCollectionModal
+          bookmarks={bookmarks}
+          userId={userId}
+          onClose={() => setShowShareCollection(false)}
+        />
+      )}
+
+      {/* 広告 */}
+      <AdBanner />
+
+      {/* シェアボタン */}
+      <section className="w-full px-4 py-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+            便利だと思ったらシェアしてください
+          </p>
+          <ShareButtons />
+        </div>
+      </section>
+    </div>
+  );
+}
