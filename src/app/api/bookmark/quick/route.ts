@@ -1,72 +1,153 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { fetchVideoMetadata } from "@/lib/metadata-fetcher";
+import { detectPlatform, detectContentType } from "@/lib/platform-detector";
+
+function getSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Supabase env not set");
+  return createClient(url, key);
+}
+
+/** URLを正規化 */
+function normalizeUrl(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl.trim());
+    if (url.hostname.includes("youtube.com") || url.hostname.includes("youtu.be")) {
+      const keepParams = ["v", "t", "list", "index"];
+      const newParams = new URLSearchParams();
+      for (const key of keepParams) {
+        const val = url.searchParams.get(key);
+        if (val) newParams.set(key, val);
+      }
+      url.search = newParams.toString() ? `?${newParams.toString()}` : "";
+    }
+    return url.href;
+  } catch {
+    return rawUrl.trim();
+  }
+}
 
 /**
  * GET /api/bookmark/quick?user_id=...&url=...
- * ブックマークレット / iOSショートカットからのワンクリック保存用エンドポイント
- *
- * 注意: iOSショートカットはURLをエンコードせずに結合するため、
- * &url= 以降をすべてURLとして扱う特別なパース処理を行う
+ * ブックマークレット / iOSショートカット からのワンクリック保存
+ * Supabase に直接保存（内部fetch不要）
  */
 export async function GET(request: NextRequest) {
   const fullUrl = request.url;
   const { searchParams } = new URL(fullUrl);
   const userId = searchParams.get("user_id");
 
-  // &url= 以降をすべてURLとして取得（エンコードされていない場合に対応）
+  // &url= 以降をすべてURLとして取得（iOSショートカット対応）
   let url = extractUrlParam(fullUrl);
-
-  // 通常のパース（エンコード済みの場合）にフォールバック
   if (!url) {
     url = searchParams.get("url");
   }
 
   if (!url || !userId) {
     return new NextResponse(
-      generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。"),
+      generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。", url, userId),
       { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }
 
   try {
-    // 内部APIを呼び出して保存
-    const baseUrl = new URL(request.url).origin;
-    const res = await fetch(`${baseUrl}/api/bookmark`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, user_id: userId }),
-    });
+    // URL正規化
+    const normalizedUrl = normalizeUrl(url);
 
-    const data = await res.json();
-
-    if (res.status === 409 && data.duplicate) {
+    // URLバリデーション
+    try {
+      const parsed = new URL(normalizedUrl);
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        return new NextResponse(
+          generateHTML("❌ エラー", "有効なURLではありません。", normalizedUrl, userId),
+          { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        );
+      }
+    } catch {
       return new NextResponse(
-        generateHTML("⚠️ 既に保存済み", `このURLは登録済みです。<br><small>${escapeHtml(url)}</small>`),
+        generateHTML("❌ エラー", `URLの形式が正しくありません: ${escapeHtml(url)}`, url, userId),
+        { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      );
+    }
+
+    const supabase = getSupabase();
+
+    // 重複チェック
+    const { data: existing } = await supabase
+      .from("bookmarks")
+      .select("id, title")
+      .eq("user_id", userId)
+      .eq("url", normalizedUrl)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      return new NextResponse(
+        generateHTML("⚠️ 既に保存済み", `このURLは登録済みです。<br><small>${escapeHtml(normalizedUrl)}</small>`, normalizedUrl, userId),
         { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
 
-    if (!res.ok) {
+    // メタ情報取得
+    const platform = detectPlatform(normalizedUrl);
+    const contentType = detectContentType(normalizedUrl);
+    const metadata = await fetchVideoMetadata(normalizedUrl);
+    const finalContentType = metadata.contentType || contentType;
+
+    // 保存
+    const { data, error } = await supabase
+      .from("bookmarks")
+      .insert({
+        user_id: userId,
+        url: normalizedUrl,
+        title: metadata.title,
+        thumbnail: metadata.thumbnail,
+        platform,
+        content_type: finalContentType,
+        duration: metadata.duration,
+        site_name: metadata.siteName,
+        video_url: metadata.videoUrl,
+        video_source: metadata.videoSource,
+        tags: [],
+        memo: "",
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // UNIQUE制約
+      if (error.code === "23505") {
+        return new NextResponse(
+          generateHTML("⚠️ 既に保存済み", `このURLは登録済みです。`, normalizedUrl, userId),
+          { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
+        );
+      }
       return new NextResponse(
-        generateHTML("❌ 保存失敗", data.error || "不明なエラー"),
+        generateHTML("❌ 保存失敗", `DB error: ${escapeHtml(error.message)}`, normalizedUrl, userId),
         { status: 500, headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
 
-    const title = data.bookmark?.title || url;
+    const title = data?.title || normalizedUrl;
     return new NextResponse(
-      generateHTML("✅ 保存しました！", `<strong>${escapeHtml(title)}</strong><br><small>${escapeHtml(url)}</small>`),
+      generateHTML("✅ 保存しました！", `<strong>${escapeHtml(title)}</strong><br><small>${escapeHtml(normalizedUrl)}</small>`, normalizedUrl, userId),
       { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Unknown error";
     return new NextResponse(
-      generateHTML("❌ エラー", "サーバーエラーが発生しました。"),
+      generateHTML("❌ エラー", `サーバーエラー: ${escapeHtml(msg)}`, url, userId),
       { status: 500, headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }
 }
 
-/** 結果表示用の小さなHTMLページ */
-function generateHTML(title: string, message: string): string {
+/** 結果表示用のHTMLページ（デバッグ情報付き） */
+function generateHTML(title: string, message: string, url?: string | null, userId?: string | null): string {
+  const debugInfo = url || userId
+    ? `<p style="margin-top:1rem;font-size:10px;color:#94a3b8;word-break:break-all">user: ${escapeHtml(userId || "none")}<br>url: ${escapeHtml(url || "none")}</p>`
+    : "";
   return `<!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -85,10 +166,9 @@ function generateHTML(title: string, message: string): string {
 <body>
   <div class="card">
     <h1>${title}</h1>
-    <p>${message}</p>
-    <a href="javascript:window.close()" class="close">閉じる</a>
+    <p>${message}</p>${debugInfo}
+    <a href="/" class="close">あの動画どこ？を開く</a>
   </div>
-  <script>setTimeout(()=>window.close(),3000)</script>
 </body>
 </html>`;
 }

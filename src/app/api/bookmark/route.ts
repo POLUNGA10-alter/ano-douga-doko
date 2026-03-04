@@ -159,6 +159,16 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
+      // UNIQUE制約違反（削除→再保存のレース or 正規化差分）の場合は重複として扱う
+      if (error.code === "23505") {
+        return NextResponse.json(
+          {
+            error: "このURLは既に保存されています",
+            duplicate: true,
+          },
+          { status: 409 }
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

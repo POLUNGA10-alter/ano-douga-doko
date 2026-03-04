@@ -157,35 +157,37 @@ export default function BookmarkCard({ bookmark, onDelete, onEdit }: BookmarkCar
         )}
       </div>
 
-      {/* 編集・削除ボタン */}
-      <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        {onEdit && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onEdit(bookmark);
-            }}
-            className="rounded-full bg-black/50 p-1.5 text-white hover:bg-indigo-600/80 transition-colors"
-            aria-label="編集"
-          >
-            ✏️
-          </button>
-        )}
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onDelete(bookmark.id);
-            }}
-            className="rounded-full bg-black/50 p-1.5 text-white hover:bg-red-600/80 transition-colors"
-            aria-label="削除"
-          >
-            ✕
-          </button>
-        )}
-      </div>
+      {/* 編集・削除ボタン（モバイル: 常時表示 / PC: ホバー時表示） */}
+      {(onEdit || onDelete) && (
+        <div className="absolute right-2 top-2 flex gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(bookmark);
+              }}
+              className="rounded-full bg-black/50 p-1.5 text-white hover:bg-indigo-600/80 transition-colors"
+              aria-label="編集"
+            >
+              ✏️
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(bookmark.id);
+              }}
+              className="rounded-full bg-black/50 p-1.5 text-white hover:bg-red-600/80 transition-colors"
+              aria-label="削除"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
     </a>
   );
 }
