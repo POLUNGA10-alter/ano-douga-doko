@@ -1,14 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 
 /**
- * GET /api/bookmark/quick?url=...&user_id=...
- * ブックマークレットからのワンクリック保存用エンドポイント
- * CORSヘッダー付きでブラウザの別オリジンからも呼べる
+ * GET /api/bookmark/quick?user_id=...&url=...
+ * ブックマークレット / iOSショートカットからのワンクリック保存用エンドポイント
+ *
+ * 注意: iOSショートカットはURLをエンコードせずに結合するため、
+ * &url= 以降をすべてURLとして扱う特別なパース処理を行う
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const url = searchParams.get("url");
+  const fullUrl = request.url;
+  const { searchParams } = new URL(fullUrl);
   const userId = searchParams.get("user_id");
+
+  // &url= 以降をすべてURLとして取得（エンコードされていない場合に対応）
+  let url = extractUrlParam(fullUrl);
+
+  // 通常のパース（エンコード済みの場合）にフォールバック
+  if (!url) {
+    url = searchParams.get("url");
+  }
 
   if (!url || !userId) {
     return new NextResponse(
@@ -85,4 +95,27 @@ function generateHTML(title: string, message: string): string {
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * &url= 以降の文字列をすべてURLとして抽出する
+ * iOSショートカットがURLエンコードせずに結合するケースに対応
+ *
+ * 例: .../quick?user_id=xxx&url=https://www.youtube.com/watch?v=abc&feature=shared
+ *   → "https://www.youtube.com/watch?v=abc&feature=shared"
+ */
+function extractUrlParam(fullUrl: string): string | null {
+  const marker = "&url=";
+  const idx = fullUrl.indexOf(marker);
+  if (idx === -1) {
+    // ?url= で始まるケース
+    const marker2 = "?url=";
+    const idx2 = fullUrl.indexOf(marker2);
+    if (idx2 === -1) return null;
+    const afterUrl = fullUrl.substring(idx2 + marker2.length);
+    // user_id が後にある場合は除去
+    const userIdIdx = afterUrl.indexOf("&user_id=");
+    return userIdIdx === -1 ? afterUrl : afterUrl.substring(0, userIdIdx);
+  }
+  return fullUrl.substring(idx + marker.length);
 }

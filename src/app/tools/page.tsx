@@ -99,6 +99,14 @@ export default function ToolsPage() {
               ⏳ 読み込み中...
             </p>
           )}
+          <div className="mt-2 rounded-md bg-amber-50 p-2 dark:bg-amber-900/20">
+            <p className="text-[10px] text-amber-700 dark:text-amber-400">
+              ⚠️ <strong>重要：</strong>このURLは<strong>今このページを開いているブラウザ</strong>に紐づいています。
+              保存した動画を確認するには、<strong>同じブラウザ</strong>（Safari /  Chrome）で
+              <a href="/" className="underline">トップページ</a>を開いてください。
+              PWAアプリとSafariでは別の保存先になる場合があります。
+            </p>
+          </div>
         </div>
 
         {/* 設定手順 */}
