@@ -103,6 +103,10 @@ export default function ToolsPage() {
 
         {/* 設定手順 */}
         <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
+          <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+            設定手順（1回だけ）
+          </p>
+
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
               1
@@ -123,10 +127,10 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                新規ショートカットを作成
+                右上の「＋」で新規作成 → 名前を入力
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                右上の「＋」→ 名前を「🎬 動画どこに保存」に変更
+                名前は「🎬 動画どこに保存」がおすすめ（共有メニューに表示される名前です）
               </p>
             </div>
           </div>
@@ -137,11 +141,41 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                「共有シートに表示」をON
+                共有シートに表示を設定
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                上部の ℹ️ ボタン →「共有シートに表示」を有効に → 入力を「URL」のみに設定
+                下部の <strong>ℹ️ ボタン</strong>をタップ →「<strong>共有シートに表示</strong>」をON → 受け入れるタイプを「<strong>URL</strong>」のみにする
               </p>
+            </div>
+          </div>
+
+          {/* ビジュアルガイド: 完成形 */}
+          <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+            <p className="mb-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+              📋 以下の順番で4つのアクションを追加してください：
+            </p>
+            <div className="space-y-2">
+              {/* アクション1 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-blue-400">共有シート</span> から <span className="text-blue-400">URL</span> を受け取る
+              </div>
+              {/* アクション2 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-yellow-400">テキスト</span>
+                <div className="mt-1 rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-300 break-all">
+                  {quickSaveUrl || "https://ano-douga-doko.vercel.app/api/bookmark/quick?user_id=...&url="}
+                </div>
+              </div>
+              {/* アクション3 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-yellow-400">テキスト</span> を <span className="text-orange-400">カスタム（区切り文字なし）</span>
+                <br />
+                <span className="text-blue-400">ショートカットの入力</span> で結合
+              </div>
+              {/* アクション4 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-blue-400">結合済みテキスト</span> の <span className="text-green-400">URLの内容を取得</span>
+              </div>
             </div>
           </div>
 
@@ -151,13 +185,11 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                アクションを追加
+                アクション①：「テキスト」を追加
               </p>
-              <div className="mt-1 space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
-                <p>① 「テキスト」アクションを追加 → 上の保存URLを貼り付け</p>
-                <p>② 「テキストを結合」アクションを追加 → 「テキスト」と「ショートカットの入力」を結合</p>
-                <p>③ 「URLの内容を取得」アクションを追加 → 結合済みテキストを指定</p>
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                下の検索バーで「テキスト」と検索 → 追加 → 上の保存URLをコピーして貼り付け
+              </p>
             </div>
           </div>
 
@@ -167,10 +199,40 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
+                アクション②：「テキストを結合」を追加
+              </p>
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p>・1番目: <strong>テキスト</strong>（上で作ったもの）</p>
+                <p>・2番目: <strong>ショートカットの入力</strong>（共有されたURL）</p>
+                <p>・区切り文字: <strong>カスタム → 空欄のまま</strong>（何も入れない）</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
+              6
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                アクション③：「URLの内容を取得」を追加
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                検索バーで「URL」と検索 →「URLの内容を取得」を追加 → 入力は自動で「<strong>結合済みテキスト</strong>」になります
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-3">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600 dark:bg-green-900/50 dark:text-green-400">
+              ✓
+            </span>
+            <div>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 完了！YouTube等で「共有」→「🎬 動画どこに保存」で保存
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                共有メニューに表示されない場合は、一番下の「アクションを編集」からONにしてください
+                共有メニューに表示されない場合は、共有メニュー一番下の「アクションを編集」からONにしてください
               </p>
             </div>
           </div>
