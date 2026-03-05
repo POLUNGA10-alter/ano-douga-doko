@@ -50,6 +50,12 @@ export async function GET(request: NextRequest) {
     try { url = decodeURIComponent(url); } catch { /* そのまま使う */ }
   }
 
+  // YouTubeアプリ等が「タイトル\nURL」形式で共有するケースに対応
+  // テキスト中からhttpで始まるURLを抽出する
+  if (url) {
+    url = extractFirstUrl(url);
+  }
+
   if (!url || !userId) {
     return new NextResponse(
       generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。", url, userId),
@@ -180,6 +186,15 @@ function generateHTML(title: string, message: string, url?: string | null, userI
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * テキストから最初のHTTP(S) URLを抽出する
+ * YouTubeアプリが「動画タイトル\nhttps://youtu.be/xxx」形式で共有するケースに対応
+ */
+function extractFirstUrl(text: string): string {
+  const match = text.match(/https?:\/\/[^\s\r\n"'<>]+/i);
+  return match ? match[0] : text;
 }
 
 /**
