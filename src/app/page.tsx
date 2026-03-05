@@ -48,6 +48,7 @@ export default function Home() {
   const [showExport, setShowExport] = useState(false);
   const [showShareCollection, setShowShareCollection] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
+  const [copiedShortcutUrl, setCopiedShortcutUrl] = useState(false);
 
   const handleCopyId = useCallback(async () => {
     if (!userId) return;
@@ -64,6 +65,26 @@ export default function Home() {
     setCopiedId(true);
     setTimeout(() => setCopiedId(false), 2000);
   }, [userId]);
+
+  const shortcutUrl = userId
+    ? `${typeof window !== "undefined" ? window.location.origin : APP_CONFIG.url}/api/bookmark/quick?user_id=${userId}&url=`
+    : null;
+
+  const handleCopyShortcutUrl = useCallback(async () => {
+    if (!shortcutUrl) return;
+    try {
+      await navigator.clipboard.writeText(shortcutUrl);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = shortcutUrl;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedShortcutUrl(true);
+    setTimeout(() => setCopiedShortcutUrl(false), 3000);
+  }, [shortcutUrl]);
 
   const handleAddUrl = async (url: string) => {
     return await addBookmark(url);
@@ -147,16 +168,28 @@ export default function Home() {
             </a>
           </div>
 
-          {/* ユーザーID（タップでコピー） */}
+          {/* ユーザーID & ショートカットURL */}
           {userId && (
-            <button
-              onClick={handleCopyId}
-              className="mt-2 inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
-              title="タップしてIDをコピー"
-            >
-              🔑 ID: <span className="font-mono">{userId.slice(0, 8)}…</span>
-              {copiedId ? <span className="text-green-500">✓コピー済み</span> : <span>📋</span>}
-            </button>
+            <div className="mt-3 flex flex-col items-center gap-1">
+              <button
+                onClick={handleCopyShortcutUrl}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] transition-all ${
+                  copiedShortcutUrl
+                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    : "bg-gray-100 text-gray-500 hover:bg-indigo-100 hover:text-indigo-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-indigo-900/30 dark:hover:text-indigo-400"
+                }`}
+              >
+                {copiedShortcutUrl ? "✅ コピーしました！ショートカットに貼り付けてください" : "📱 iOSショートカット用URLをコピー"}
+              </button>
+              <button
+                onClick={handleCopyId}
+                className="inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
+                title="タップしてIDをコピー"
+              >
+                🔑 ID: <span className="font-mono">{userId.slice(0, 8)}…</span>
+                {copiedId ? <span className="text-green-500">✓</span> : <span>📋</span>}
+              </button>
+            </div>
           )}
         </div>
       </section>
