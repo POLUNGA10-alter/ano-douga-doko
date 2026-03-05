@@ -159,7 +159,7 @@ export default function ToolsPage() {
         {/* 設定手順 */}
         <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
           <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-            設定手順（1回だけ）
+            設定手順（1回だけ・2アクションで完了！）
           </p>
 
           <div className="flex gap-3">
@@ -196,41 +196,11 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                共有シートに表示を設定
+                共有シートの設定
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                下部の <strong>ℹ️ ボタン</strong>をタップ →「<strong>共有シートに表示</strong>」をON → 受け入れるタイプを「<strong>URL</strong>」のみにする
+                下部の <strong>ℹ️ ボタン</strong>をタップ →「<strong>共有シートに表示</strong>」をON → 受け入れるタイプを「<strong>テキスト</strong>」と「<strong>URL</strong>」の両方にチェック
               </p>
-            </div>
-          </div>
-
-          {/* ビジュアルガイド: 完成形 */}
-          <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-            <p className="mb-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-              📋 以下の順番で4つのアクションを追加してください：
-            </p>
-            <div className="space-y-2">
-              {/* アクション1 */}
-              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
-                <span className="text-blue-400">共有シート</span> から <span className="text-blue-400">URL</span> を受け取る
-              </div>
-              {/* アクション2 */}
-              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
-                <span className="text-yellow-400">テキスト</span>
-                <div className="mt-1 rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-300 break-all">
-                  {quickSaveUrl || "https://ano-douga-doko.vercel.app/api/bookmark/quick?user_id=...&url="}
-                </div>
-              </div>
-              {/* アクション3 */}
-              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
-                <span className="text-yellow-400">テキスト</span> を <span className="text-orange-400">カスタム（区切り文字なし）</span>
-                <br />
-                <span className="text-blue-400">ショートカットの入力</span> で結合
-              </div>
-              {/* アクション4 */}
-              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
-                <span className="text-blue-400">結合済みテキスト</span> の <span className="text-green-400">URLの内容を取得</span>
-              </div>
             </div>
           </div>
 
@@ -242,9 +212,11 @@ export default function ToolsPage() {
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 アクション①：「テキスト」を追加
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                下の検索バーで「テキスト」と検索 → 追加 → 上の保存URLをコピーして貼り付け
-              </p>
+              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p>・下の検索バーで「テキスト」と検索 → 追加</p>
+                <p>・上の<strong>保存URLをコピー</strong>して貼り付け</p>
+                <p>・末尾の <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">url=</code> の後ろにカーソルを置き、<strong>キーボード上に表示される「ショートカットの入力」をタップ</strong>して挿入</p>
+              </div>
             </div>
           </div>
 
@@ -254,28 +226,35 @@ export default function ToolsPage() {
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                アクション②：「テキストを結合」を追加
+                アクション②：「Web表示を表示」を追加
               </p>
-              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                <p>・1番目: <strong>テキスト</strong>（上で作ったもの）</p>
-                <p>・2番目: <strong>ショートカットの入力</strong>（共有されたURL）</p>
-                <p>・区切り文字: <strong>カスタム → 空欄のまま</strong>（何も入れない）</p>
-              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                検索バーで「Web」と検索 →「<strong>Web表示を表示</strong>」を追加 → 入力は自動で「<strong>テキスト</strong>」になります
+              </p>
             </div>
           </div>
 
-          <div className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
-              6
-            </span>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                アクション③：「URLの内容を取得」を追加
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                検索バーで「URL」と検索 →「URLの内容を取得」を追加 → 入力は自動で「<strong>結合済みテキスト</strong>」になります
-              </p>
+          {/* ビジュアルガイド: 完成形 */}
+          <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
+            <p className="mb-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+              📋 完成形（この2つのアクションだけでOK）：
+            </p>
+            <div className="space-y-2">
+              {/* アクション1 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-yellow-400">テキスト</span>
+                <div className="mt-1 rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-300 break-all">
+                  {quickSaveUrl || "https://ano-douga-doko.vercel.app/api/bookmark/quick?user_id=...&url="}<span className="text-blue-400"> ショートカットの入力</span>
+                </div>
+              </div>
+              {/* アクション2 */}
+              <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
+                <span className="text-yellow-400">テキスト</span> で <span className="text-blue-400">Web表示を表示</span>
+              </div>
             </div>
+            <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
+              ※「共有シートから テキスト、URL を受け取る」は自動で追加されます
+            </p>
           </div>
 
           <div className="flex gap-3">
