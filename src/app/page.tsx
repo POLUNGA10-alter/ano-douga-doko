@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useBookmarks } from "@/hooks/useBookmarks";
 import BookmarkList from "@/components/BookmarkList";
 import TagFilter from "@/components/TagFilter";
@@ -47,6 +47,23 @@ export default function Home() {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showShareCollection, setShowShareCollection] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
+
+  const handleCopyId = useCallback(async () => {
+    if (!userId) return;
+    try {
+      await navigator.clipboard.writeText(userId);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = userId;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+    }
+    setCopiedId(true);
+    setTimeout(() => setCopiedId(false), 2000);
+  }, [userId]);
 
   const handleAddUrl = async (url: string) => {
     return await addBookmark(url);
@@ -129,6 +146,18 @@ export default function Home() {
               🔧 便利ツール
             </a>
           </div>
+
+          {/* ユーザーID（タップでコピー） */}
+          {userId && (
+            <button
+              onClick={handleCopyId}
+              className="mt-2 inline-flex items-center gap-1 text-[10px] text-gray-400 hover:text-indigo-500 dark:text-gray-500 dark:hover:text-indigo-400 transition-colors"
+              title="タップしてIDをコピー"
+            >
+              🔑 ID: <span className="font-mono">{userId.slice(0, 8)}…</span>
+              {copiedId ? <span className="text-green-500">✓コピー済み</span> : <span>📋</span>}
+            </button>
+          )}
         </div>
       </section>
 
