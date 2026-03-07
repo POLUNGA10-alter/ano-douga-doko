@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { isValidUserId, isValidBookmarkId } from "@/lib/validation";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,9 +20,17 @@ export async function POST(request: NextRequest) {
   try {
     const { user_id, bookmark_ids } = await request.json();
 
-    if (!user_id || !bookmark_ids?.length) {
+    if (!isValidUserId(user_id) || !Array.isArray(bookmark_ids) || !bookmark_ids.length) {
       return NextResponse.json(
-        { error: "user_id and bookmark_ids are required" },
+        { error: "Valid user_id (UUID) and bookmark_ids[] are required" },
+        { status: 400 }
+      );
+    }
+
+    // 各bookmark_idのUUID検証
+    if (!bookmark_ids.every(isValidBookmarkId)) {
+      return NextResponse.json(
+        { error: "All bookmark_ids must be valid UUIDs" },
         { status: 400 }
       );
     }

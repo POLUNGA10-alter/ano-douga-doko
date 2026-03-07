@@ -16,6 +16,7 @@ function SharePageContent() {
   const { userId } = useUserId();
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [existingTags, setExistingTags] = useState<string[]>([]);
 
   // URLは共有メニューから url, text のいずれかで渡される
   const sharedUrl =
@@ -43,6 +44,24 @@ function SharePageContent() {
 
     fetchMeta();
   }, [sharedUrl]);
+
+  // 既存タグ一覧を取得
+  useEffect(() => {
+    if (!userId) return;
+    const fetchTags = async () => {
+      try {
+        const res = await fetch(`/api/bookmark?user_id=${userId}`);
+        const data = await res.json();
+        const tags = Array.from(
+          new Set((data.bookmarks || []).flatMap((b: { tags: string[] }) => b.tags))
+        ).sort() as string[];
+        setExistingTags(tags);
+      } catch {
+        // タグ取得失敗でも保存は可能
+      }
+    };
+    fetchTags();
+  }, [userId]);
 
   const handleSave = async (tags: string[], memo: string) => {
     if (!userId || !sharedUrl) return;
@@ -81,6 +100,7 @@ function SharePageContent() {
       metadata={metadata}
       isLoading={isLoading}
       onSave={handleSave}
+      existingTags={existingTags}
     />
   );
 }

@@ -25,7 +25,7 @@ export const APP_CONFIG = {
   },
 
   // --- SNSシェア ---
-  ogImage: "/og-image.png",
+  ogImage: "/icon-512.png",
 
   // --- 広告 ---
   adsense: {

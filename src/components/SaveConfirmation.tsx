@@ -27,6 +27,7 @@ export default function SaveConfirmation({
   const [memo, setMemo] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>
@@ -44,9 +45,12 @@ export default function SaveConfirmation({
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveError(null);
     try {
       await onSave(selectedTags, memo);
       setSaved(true);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "保存に失敗しました。もう一度お試しください。");
     } finally {
       setIsSaving(false);
     }
@@ -152,6 +156,13 @@ export default function SaveConfirmation({
           className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition-colors focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-900 dark:text-white"
         />
       </div>
+
+      {/* エラー表示 */}
+      {saveError && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          ❌ {saveError}
+        </div>
+      )}
 
       {/* 保存ボタン */}
       <button

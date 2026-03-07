@@ -78,18 +78,18 @@ export default function ToolsPage() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
-        🔧 便利ツール
+        � 便利な使い方
       </h1>
 
       {/* Android: PWA Share Target */}
       <section className="card mb-8">
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
-          🤖 Android：共有メニューから保存
+          🤖 Android
         </h2>
         <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          ホーム画面に追加すると、他アプリの「共有」ボタンから直接保存できます。
+          ホーム画面に追加すると、他アプリの「共有」から直接保存できます。
         </p>
-        <div className="space-y-2 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
+        <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
           <p className="text-sm text-gray-700 dark:text-gray-300">
             <strong>Chrome：</strong> メニュー →「ホーム画面に追加」or「アプリをインストール」
           </p>
@@ -102,171 +102,129 @@ export default function ToolsPage() {
       {/* iOS: ショートカットで保存 */}
       <section className="card mb-8">
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
-          🍎 iPhone / iPad：ショートカットで保存
+          🍎 iPhone / iPad
         </h2>
-        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          iOSの「ショートカット」アプリを使えば、共有メニューからワンタップで保存できます。
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+          「ショートカット」アプリを使えば、共有メニューからワンタップで保存できます。
+          まずは<strong>ホーム画面に追加</strong>してからご利用ください。
         </p>
-
-        {/* Safari ↔ PWA 警告 */}
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-900/20">
-          <p className="text-xs font-bold text-red-700 dark:text-red-400">
-            🚨 Safari と PWA（ホーム画面アプリ）では保存先が異なります！
-          </p>
-          <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
-            iOSでは Safari と ホーム画面に追加したアプリ（PWA）で<strong>別々のユーザーID</strong>が生成されます。
-            ショートカットを設定するときは、<strong>普段ブックマークを確認するアプリ</strong>（PWA or Safari）で
-            このページを開いて URL をコピーしてください。
-          </p>
-          <p className="mt-1 text-[11px] text-red-600 dark:text-red-400">
-            もし既にショートカットを設定済みで保存できない場合は、下の「🔑 ユーザーID管理」から
-            IDを同期してください。
-          </p>
-        </div>
-
-        {/* あなたの保存用URL */}
-        <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 dark:border-indigo-800 dark:bg-indigo-900/20">
-          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-            📋 あなた専用の保存URL（ショートカットに貼り付けて使います）
-          </p>
-          {quickSaveUrl ? (
-            <div className="flex items-center gap-2">
-              <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400 break-all">
-                {quickSaveUrl}
-              </code>
-              <button
-                onClick={handleCopyUrl}
-                className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
-              >
-                {copiedUrl ? "✓ コピー済み" : "コピー"}
-              </button>
-            </div>
-          ) : (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              ⏳ 読み込み中...
-            </p>
-          )}
-          <div className="mt-2 rounded-md bg-amber-50 p-2 dark:bg-amber-900/20">
-            <p className="text-[10px] text-amber-700 dark:text-amber-400">
-              ⚠️ <strong>重要：</strong>このURLは<strong>今このページを開いているブラウザ</strong>に紐づいています。
-              保存した動画を確認するには、<strong>同じブラウザ</strong>（Safari /  Chrome）で
-              <a href="/" className="underline">トップページ</a>を開いてください。
-              PWAアプリとSafariでは別の保存先になる場合があります。
-            </p>
-          </div>
-        </div>
 
         {/* 設定手順 */}
         <div className="space-y-4 rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
           <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-            設定手順（1回だけ・2アクションで完了！）
+            設定手順（1回だけ）
           </p>
 
+          {/* Step 1 */}
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
               1
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                「ショートカット」アプリを開く
+                「ショートカット」アプリで新規作成
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                iPhoneに最初から入っています。見つからない場合はApp Storeで「ショートカット」を検索
+                右上の「＋」→ 名前を「🎬 動画どこに保存」に設定
               </p>
             </div>
           </div>
 
+          {/* Step 2 */}
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
               2
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                右上の「＋」で新規作成 → 名前を入力
+                共有シートに表示をON
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                名前は「🎬 動画どこに保存」がおすすめ（共有メニューに表示される名前です）
+                下部の <strong>ℹ️</strong> →「<strong>共有シートに表示</strong>」をON → 受け入れ：「<strong>テキスト</strong>」「<strong>URL</strong>」両方にチェック
               </p>
             </div>
           </div>
 
+          {/* Step 3: 保存URL + テキストアクション */}
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
               3
             </span>
-            <div>
+            <div className="flex-1">
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                共有シートの設定
+                アクション①：「テキスト」を追加して保存URLを貼り付け
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                下部の <strong>ℹ️ ボタン</strong>をタップ →「<strong>共有シートに表示</strong>」をON → 受け入れるタイプを「<strong>テキスト</strong>」と「<strong>URL</strong>」の両方にチェック
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                下の保存URLをコピー → 「テキスト」アクションに貼り付け → 末尾の <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">url=</code> の後ろに<strong>「ショートカットの入力」</strong>を挿入
               </p>
+
+              {/* 保存URL（ステップ内に配置） */}
+              <div className="mt-2 rounded-lg border border-indigo-200 bg-indigo-50 p-2.5 dark:border-indigo-800 dark:bg-indigo-900/20">
+                {quickSaveUrl ? (
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-400 break-all">
+                      {quickSaveUrl}
+                    </code>
+                    <button
+                      onClick={handleCopyUrl}
+                      className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+                    >
+                      {copiedUrl ? "✓ コピー済み" : "コピー"}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                    ⏳ 読み込み中...
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
+          {/* Step 4 */}
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
               4
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                アクション①：「テキスト」を追加
-              </p>
-              <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                <p>・下の検索バーで「テキスト」と検索 → 追加</p>
-                <p>・上の<strong>保存URLをコピー</strong>して貼り付け</p>
-                <p>・末尾の <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">url=</code> の後ろにカーソルを置き、<strong>キーボード上に表示される「ショートカットの入力」をタップ</strong>して挿入</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400">
-              5
-            </span>
-            <div>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
                 アクション②：「Web表示を表示」を追加
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                検索バーで「Web」と検索 →「<strong>Web表示を表示</strong>」を追加 → 入力は自動で「<strong>テキスト</strong>」になります
+                検索で「Web」→「<strong>Web表示を表示</strong>」を追加（入力は自動で「テキスト」に）
               </p>
             </div>
           </div>
 
           {/* ビジュアルガイド: 完成形 */}
           <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900">
-            <p className="mb-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-              📋 完成形（この2つのアクションだけでOK）：
+            <p className="mb-2 text-[10px] font-bold text-gray-500 dark:text-gray-400">
+              完成イメージ
             </p>
             <div className="space-y-2">
-              {/* アクション1 */}
               <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
                 <span className="text-yellow-400">テキスト</span>
                 <div className="mt-1 rounded bg-gray-700 px-2 py-1 text-[10px] text-gray-300 break-all">
                   {quickSaveUrl || "https://ano-douga-doko.vercel.app/api/bookmark/quick?user_id=...&url="}<span className="text-blue-400"> ショートカットの入力</span>
                 </div>
               </div>
-              {/* アクション2 */}
               <div className="rounded-md bg-gray-800 px-3 py-2 text-xs text-white">
                 <span className="text-yellow-400">テキスト</span> で <span className="text-blue-400">Web表示を表示</span>
               </div>
             </div>
-            <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400">
-              ※「共有シートから テキスト、URL を受け取る」は自動で追加されます
-            </p>
           </div>
 
+          {/* 完了 */}
           <div className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-xs font-bold text-green-600 dark:bg-green-900/50 dark:text-green-400">
               ✓
             </span>
             <div>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                完了！YouTube等で「共有」→「🎬 動画どこに保存」で保存
+                完了！YouTube等で「共有」→「🎬 動画どこに保存」
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                共有メニューに表示されない場合は、共有メニュー一番下の「アクションを編集」からONにしてください
+                表示されない場合は共有メニュー下の「アクションを編集」からON
               </p>
             </div>
           </div>
@@ -276,11 +234,10 @@ export default function ToolsPage() {
       {/* ブックマークレットセクション */}
       <section className="card">
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
-          📌 ブックマークレット（PC向け）
+          📌 PC（ブックマークレット）
         </h2>
         <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          ブラウザのブックマークバーにボタンを追加すると、どのWebページからでも
-          <strong>ワンクリック</strong>で「{APP_CONFIG.name}」に保存できます。
+          ブックマークバーにボタンを追加すると、<strong>ワンクリック</strong>で保存できます。
         </p>
 
         {/* ステップガイド */}
@@ -336,86 +293,20 @@ export default function ToolsPage() {
               <p className="text-sm font-medium text-gray-900 dark:text-white">
                 保存したいページで「🎬 動画どこに保存」をクリック！
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                小さなウィンドウが開いて保存結果が表示されます。3秒で自動で閉じます。
-              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ユーザーID管理 */}
+      {/* ユーザーID管理（非表示） */}
+      {/* 
       <section className="card mb-8 mt-8">
         <h2 className="mb-2 text-lg font-bold text-gray-900 dark:text-white">
           🔑 ユーザーID管理
         </h2>
-        <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          Safari ↔ PWA 間でブックマークを共有するには、同じユーザーIDを使う必要があります。
-        </p>
-
-        {/* 現在のID */}
-        <div className="mb-4 rounded-lg bg-gray-50 p-3 dark:bg-gray-800/50">
-          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-            📍 このブラウザのユーザーID
-          </p>
-          {userId ? (
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded bg-white px-2 py-1.5 text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-400 break-all font-mono select-all">
-                {userId}
-              </code>
-              <button
-                onClick={handleCopyId}
-                className="shrink-0 rounded-lg bg-gray-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-500"
-              >
-                {copiedId ? "✓ コピー済み" : "コピー"}
-              </button>
-            </div>
-          ) : (
-            <p className="text-xs text-amber-600">⏳ 読み込み中...</p>
-          )}
-        </div>
-
-        {/* IDインポート */}
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
-          <p className="mb-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
-            📲 他のブラウザ / PWA から ID をインポート
-          </p>
-          <p className="mb-2 text-[10px] text-gray-500 dark:text-gray-400">
-            Safari で表示されている ID をコピーして、PWA のここに貼り付ける（またはその逆）ことで、
-            ブックマークの保存先を統一できます。
-          </p>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={importInput}
-              onChange={(e) => setImportInput(e.target.value)}
-              placeholder="ここにIDをペースト..."
-              className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-            />
-            <button
-              onClick={handleImportId}
-              disabled={!importInput.trim()}
-              className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-40"
-            >
-              上書き保存
-            </button>
-          </div>
-          {importStatus === "success" && (
-            <p className="mt-2 text-xs text-green-600 dark:text-green-400">
-              ✅ IDを更新しました！ショートカットの保存URLも自動で更新されています。
-            </p>
-          )}
-          {importStatus === "error" && (
-            <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-              ❌ 無効なIDです。正しい形式（UUID）のIDを入力してください。
-            </p>
-          )}
-          <p className="mt-2 text-[10px] text-amber-700 dark:text-amber-400">
-            ⚠️ IDを変更すると、以前のIDで保存したブックマークは表示されなくなります。
-            元のIDをメモしておくことをお勧めします。
-          </p>
-        </div>
+        ...
       </section>
+      */}
 
       <div className="mt-8 text-center">
         <a

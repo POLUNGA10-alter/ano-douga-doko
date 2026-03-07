@@ -3,11 +3,11 @@
 import { useState } from "react";
 
 interface BulkImportModalProps {
-  onImport: (urls: string[]) => Promise<{ success: number; duplicates: number; errors: number }>;
+  onImportOne: (url: string) => Promise<{ duplicate?: boolean }>;
   onClose: () => void;
 }
 
-export default function BulkImportModal({ onImport, onClose }: BulkImportModalProps) {
+export default function BulkImportModal({ onImportOne, onClose }: BulkImportModalProps) {
   const [text, setText] = useState("");
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState<{
@@ -45,21 +45,10 @@ export default function BulkImportModal({ onImport, onClose }: BulkImportModalPr
 
     for (let i = 0; i < urls.length; i++) {
       try {
-        const res = await fetch("/api/bookmark", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            url: urls[i],
-            user_id: localStorage.getItem("ano-douga-user-id") || "",
-            tags: [],
-            memo: "",
-          }),
-        });
+        const result = await onImportOne(urls[i]);
 
-        if (res.status === 409) {
+        if (result.duplicate) {
           duplicates++;
-        } else if (!res.ok) {
-          errors++;
         } else {
           success++;
         }

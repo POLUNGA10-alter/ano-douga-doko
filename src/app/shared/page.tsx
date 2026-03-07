@@ -36,7 +36,9 @@ function SharedCollectionContent() {
   const bookmarks = useMemo(() => {
     if (!encoded) return null;
     try {
-      const jsonStr = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
+      const binaryStr = atob(encoded.replace(/-/g, "+").replace(/_/g, "/"));
+      const bytes = Uint8Array.from(binaryStr, (c) => c.charCodeAt(0));
+      const jsonStr = new TextDecoder().decode(bytes);
       return JSON.parse(jsonStr) as SharedBookmark[];
     } catch {
       return null;

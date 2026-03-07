@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchVideoMetadata } from "@/lib/metadata-fetcher";
 import { detectPlatform, detectContentType } from "@/lib/platform-detector";
+import {
+  isValidUserId,
+  isValidBookmarkId,
+  isValidTags,
+  isValidMemo,
+  isValidTitle,
+  isValidHttpUrl,
+  isSafeUrl,
+} from "@/lib/validation";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -10,16 +19,6 @@ function getSupabase() {
     throw new Error("Supabase environment variables are not set");
   }
   return createClient(url, key);
-}
-
-/** URLバリデーション */
-function isValidUrl(str: string): boolean {
-  try {
-    const url = new URL(str);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 /** URLを正規化（末尾スラッシュ除去、トラッキングパラメータ削除等） */
@@ -51,15 +50,16 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get("user_id");
 
-  if (!userId) {
-    return NextResponse.json({ error: "user_id is required" }, { status: 400 });
+  if (!isValidUserId(userId)) {
+    return NextResponse.json({ error: "Invalid user_id" }, { status: 400 });
   }
 
   const tag = searchParams.get("tag");
   const platform = searchParams.get("platform");
 
-  const supabase = getSupabase();
-  let query = supabase
+  try {
+    const supabase = getSupabase();
+    let query = supabase
     .from("bookmarks")
     .select("*")
     .eq("user_id", userId)
@@ -80,6 +80,12 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({ bookmarks: data });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
 /**
@@ -90,15 +96,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url: rawUrl, user_id, tags = [], memo = "" } = body;
 
-    if (!rawUrl || !user_id) {
+    if (!rawUrl || !isValidUserId(user_id)) {
       return NextResponse.json(
-        { error: "url and user_id are required" },
+        { error: "Valid url and user_id (UUID) are required" },
+        { status: 400 }
+      );
+    }
+
+    // 入力型検証
+    if (!isValidTags(tags)) {
+      return NextResponse.json(
+        { error: "tags must be an array of strings (max 20 tags, each max 50 chars)" },
+        { status: 400 }
+      );
+    }
+    if (!isValidMemo(memo)) {
+      return NextResponse.json(
+        { error: "memo must be a string (max 2000 chars)" },
         { status: 400 }
       );
     }
 
     // URLバリデーション
-    if (!isValidUrl(rawUrl)) {
+    if (!isValidHttpUrl(rawUrl)) {
       return NextResponse.json(
         { error: "有効なURL（http:// または https://）を入力してください" },
         { status: 400 }
@@ -107,6 +127,14 @@ export async function POST(request: NextRequest) {
 
     // URL正規化
     const url = normalizeUrl(rawUrl);
+
+    // SSRF対策: プライベートIP / localhost をブロック
+    if (!isSafeUrl(url)) {
+      return NextResponse.json(
+        { error: "このURLにはアクセスできません" },
+        { status: 400 }
+      );
+    }
 
     // 重複URL検出
     const supabaseCheck = getSupabase();
@@ -195,15 +223,16 @@ export async function DELETE(request: NextRequest) {
   const id = searchParams.get("id");
   const userId = searchParams.get("user_id");
 
-  if (!id || !userId) {
+  if (!isValidBookmarkId(id) || !isValidUserId(userId)) {
     return NextResponse.json(
-      { error: "id and user_id are required" },
+      { error: "Valid id and user_id (UUID) are required" },
       { status: 400 }
     );
   }
 
-  const supabase = getSupabase();
-  const { error } = await supabase
+  try {
+    const supabase = getSupabase();
+    const { error } = await supabase
     .from("bookmarks")
     .delete()
     .eq("id", id)
@@ -214,6 +243,12 @@ export async function DELETE(request: NextRequest) {
   }
 
   return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
 }
 
 /**
@@ -224,9 +259,29 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { id, user_id, title, memo, tags } = body;
 
-    if (!id || !user_id) {
+    if (!isValidBookmarkId(id) || !isValidUserId(user_id)) {
       return NextResponse.json(
-        { error: "id and user_id are required" },
+        { error: "Valid id and user_id (UUID) are required" },
+        { status: 400 }
+      );
+    }
+
+    // 更新値の型検証
+    if (title !== undefined && !isValidTitle(title)) {
+      return NextResponse.json(
+        { error: "title must be a string (max 500 chars)" },
+        { status: 400 }
+      );
+    }
+    if (memo !== undefined && !isValidMemo(memo)) {
+      return NextResponse.json(
+        { error: "memo must be a string (max 2000 chars)" },
+        { status: 400 }
+      );
+    }
+    if (tags !== undefined && !isValidTags(tags)) {
+      return NextResponse.json(
+        { error: "tags must be an array of strings" },
         { status: 400 }
       );
     }
@@ -254,6 +309,13 @@ export async function PATCH(request: NextRequest) {
       .single();
 
     if (error) {
+      // 該当行が0件の場合（PGRST116）→ 404
+      if (error.code === "PGRST116") {
+        return NextResponse.json(
+          { error: "ブックマークが見つかりません" },
+          { status: 404 }
+        );
+      }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 

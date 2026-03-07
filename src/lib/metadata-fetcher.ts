@@ -106,6 +106,17 @@ export async function fetchVideoMetadata(url: string): Promise<VideoMetadata> {
   try {
     const ogp = await fetchOGPWithFallback(url, platform);
 
+    // 埋め込み動画が検出されたがページ自体にサムネイルがない場合
+    // → 動画URLからサムネイルを取得（YouTube embed等に有効）
+    let thumbnail = ogp.thumbnail || null;
+    if (ogp.videoUrl && !thumbnail) {
+      try {
+        thumbnail = await fetchEmbeddedVideoThumbnail(ogp.videoUrl);
+      } catch {
+        // ignore - スクリーンショットフォールバックで対応
+      }
+    }
+
     // ページ内動画が見つかった場合、contentTypeをvideoに昇格
     const finalContentType =
       ogp.videoUrl && ogp.contentType !== 'audio'
@@ -116,8 +127,8 @@ export async function fetchVideoMetadata(url: string): Promise<VideoMetadata> {
       ...base,
       ...ogp,
       contentType: finalContentType,
-      thumbnail: ogp.thumbnail || generateScreenshotThumbnail(url),
-      fetchSuccess: ogp.title !== null || ogp.thumbnail !== null,
+      thumbnail: thumbnail || generateScreenshotThumbnail(url),
+      fetchSuccess: ogp.title !== null || thumbnail !== null,
     };
   } catch (e) {
     const errMsg = e instanceof Error ? e.message : "Unknown error";
@@ -141,7 +152,7 @@ function generateScreenshotThumbnail(url: string): string {
   // Google PageSpeed Insights のスクリーンショットAPIは制限が多いため
   // microlink.io のスクリーンショット機能を使用（無料枠: 50req/day）
   // フォールバックとして image.thum.io を使用（完全無料）
-  return `https://image.thum.io/get/width/640/crop/360/noanimate/${encodeURIComponent(url)}`;
+  return `https://image.thum.io/get/width/640/crop/360/noanimate/${url}`;
 }
 
 /**
@@ -297,10 +308,11 @@ async function fetchOGPWithFallback(
  */
 async function fetchWithTimeout(
   url: string,
-  init?: RequestInit
+  init?: RequestInit,
+  timeout: number = FETCH_TIMEOUT
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
 
   try {
     const res = await fetch(url, {
@@ -436,7 +448,7 @@ function escapeRegex(str: string): string {
 function extractHtml5VideoUrl(html: string, baseUrl: string): string | null {
   // 1. <video src="...">
   const videoSrcMatch = html.match(
-    /<video[^>]+src=["']([^"']+?)["']/i
+    /<video[^>]+\ssrc=["']([^"']+?)["']/i
   );
   if (videoSrcMatch) {
     return resolveUrl(videoSrcMatch[1], baseUrl);
@@ -470,7 +482,7 @@ function extractHtml5VideoUrl(html: string, baseUrl: string): string | null {
 
   // 3. data-src パターン（遅延読み込み）
   const dataSrcMatch = html.match(
-    /<video[^>]+data-src=["']([^"']+?)["']/i
+    /<video[^>]+\sdata-src=["']([^"']+?)["']/i
   );
   if (dataSrcMatch) {
     return resolveUrl(dataSrcMatch[1], baseUrl);
@@ -493,7 +505,7 @@ function extractHtml5VideoUrl(html: string, baseUrl: string): string | null {
  */
 function extractIframeEmbedUrl(html: string): string | null {
   // iframeのsrcを順次チェック
-  const iframeRegex = /<iframe[^>]+src=["']([^"']+?)["']/gi;
+  const iframeRegex = /<iframe[^>]+\ssrc=["']([^"']+?)["']/gi;
   let match: RegExpExecArray | null;
 
   while ((match = iframeRegex.exec(html)) !== null) {
@@ -544,6 +556,68 @@ function extractIframeEmbedUrl(html: string): string | null {
     if (twitchEmbed) {
       return `https://www.twitch.tv/videos/${twitchEmbed[1]}`;
     }
+  }
+
+  return null;
+}
+
+/** 埋め込み動画サムネ取得用の短いタイムアウト（ms） */
+const EMBEDDED_THUMB_TIMEOUT = 4000;
+
+/**
+ * 埋め込み動画URLからサムネイルを取得
+ *
+ * ページ内のiframe / og:video / <video> で検出された動画URLに対して、
+ * oEmbed → OGP の順でサムネイルの取得を試みる。
+ *
+ * 対応例:
+ *  - ブログ内のYouTube embed → YouTubeのoEmbedでサムネ取得
+ *  - Vimeo / Dailymotion embed → 各oEmbedで取得
+ *  - その他の動画ページ → OGPから取得
+ */
+async function fetchEmbeddedVideoThumbnail(
+  videoUrl: string
+): Promise<string | null> {
+  const videoPlatform = detectPlatform(videoUrl);
+
+  // oEmbed対応プラットフォームならoEmbedで取得（YouTube, Vimeo等）
+  if (OEMBED_ENDPOINTS[videoPlatform]) {
+    try {
+      const oembed = await fetchOEmbed(videoUrl, videoPlatform);
+      if (oembed.thumbnail) return oembed.thumbnail as string;
+    } catch {
+      // oEmbed失敗 → OGPフォールバック
+    }
+  }
+
+  // OGPで取得を試行
+  try {
+    const res = await fetchWithTimeout(videoUrl, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+        Accept: "text/html,application/xhtml+xml",
+        "Accept-Language": "ja,en;q=0.9",
+      },
+      redirect: "follow",
+    }, EMBEDDED_THUMB_TIMEOUT);
+    if (res.ok) {
+      const contentTypeHeader = res.headers.get("content-type") || "";
+      if (
+        contentTypeHeader.includes("text/html") ||
+        contentTypeHeader.includes("application/xhtml")
+      ) {
+        const html = await res.text();
+        const ogImage = extractMeta(html, "og:image");
+        const twImage = extractMeta(html, "twitter:image");
+        const thumb = ogImage || twImage;
+        if (thumb) {
+          return thumb.startsWith("http") ? thumb : resolveUrl(thumb, videoUrl);
+        }
+      }
+    }
+  } catch {
+    // ignore
   }
 
   return null;

@@ -163,15 +163,20 @@ export function useBookmarks() {
 
   /** ブックマークの並び順を更新（D&D用） */
   const reorderBookmarks = async (orderedIds: string[]) => {
-    // 楽観的更新
+    // 楽観的更新（フィルタ中でも非表示のブックマークを保持）
     setAllBookmarks((prev) => {
+      const orderedSet = new Set(orderedIds);
       const map = new Map(prev.map((b) => [b.id, b]));
-      return orderedIds
+      // 並び替え対象
+      const reordered = orderedIds
         .map((id, i) => {
           const b = map.get(id);
           return b ? { ...b, sort_order: i } : null;
         })
         .filter(Boolean) as typeof prev;
+      // 並び替え対象外（フィルタで非表示だったもの）を末尾に追加
+      const rest = prev.filter((b) => !orderedSet.has(b.id));
+      return [...reordered, ...rest];
     });
 
     try {
@@ -189,14 +194,14 @@ export function useBookmarks() {
   };
 
   /** 全タグの一覧を抽出（フィルタ前の全データから） */
-  const allTags = Array.from(
-    new Set(allBookmarks.flatMap((b) => b.tags))
-  ).sort();
+  const allTags = useMemo(() =>
+    Array.from(new Set(allBookmarks.flatMap((b) => b.tags))).sort()
+  , [allBookmarks]);
 
   /** 保存データに含まれるプラットフォーム一覧（フィルタ前の全データから） */
-  const activePlatforms = Array.from(
-    new Set(allBookmarks.map((b) => b.platform))
-  ) as Platform[];
+  const activePlatforms = useMemo(() =>
+    Array.from(new Set(allBookmarks.map((b) => b.platform))) as Platform[]
+  , [allBookmarks]);
 
   /** プラットフォーム別件数（バッジ用） */
   const platformCounts = useMemo(() => {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchVideoMetadata } from "@/lib/metadata-fetcher";
+import { isSafeUrl } from "@/lib/validation";
 
 /**
  * GET /api/metadata?url=...  - URLからメタ情報を取得
@@ -10,6 +11,10 @@ export async function GET(request: NextRequest) {
 
   if (!url) {
     return NextResponse.json({ error: "url is required" }, { status: 400 });
+  }
+
+  if (!isSafeUrl(url)) {
+    return NextResponse.json({ error: "Invalid or disallowed URL" }, { status: 400 });
   }
 
   try {

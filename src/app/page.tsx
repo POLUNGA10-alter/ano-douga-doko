@@ -101,25 +101,12 @@ export default function Home() {
     await editBookmark(id, updates);
   };
 
-  const handleBulkImport = async (urls: string[]) => {
-    let success = 0;
-    let duplicates = 0;
-    let errors = 0;
-
-    for (const url of urls) {
-      try {
-        const result = await addBookmark(url);
-        if (result.duplicate) {
-          duplicates++;
-        } else {
-          success++;
-        }
-      } catch {
-        errors++;
-      }
+  const handleBulkImportOne = async (url: string): Promise<{ duplicate?: boolean }> => {
+    const result = await addBookmark(url);
+    if (result.duplicate) {
+      return { duplicate: true };
     }
-
-    return { success, duplicates, errors };
+    return {};
   };
 
   return (
@@ -164,7 +151,7 @@ export default function Home() {
               href="/tools"
               className="text-xs text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition-colors"
             >
-              🔧 便利ツール
+              � 便利な使い方
             </a>
           </div>
 
@@ -254,7 +241,7 @@ export default function Home() {
       {/* 一括インポートモーダル */}
       {showBulkImport && (
         <BulkImportModal
-          onImport={handleBulkImport}
+          onImportOne={handleBulkImportOne}
           onClose={() => setShowBulkImport(false)}
         />
       )}

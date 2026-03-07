@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fetchVideoMetadata } from "@/lib/metadata-fetcher";
 import { detectPlatform, detectContentType } from "@/lib/platform-detector";
+import { isValidUserId, isSafeUrl } from "@/lib/validation";
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -41,9 +42,13 @@ export async function GET(request: NextRequest) {
 
   // URL取得: まず標準パース（エンコード済み対応）、次にiOSショートカット用の生パース
   let url = searchParams.get("url");
-  if (!url) {
-    // iOSショートカットがURLをエンコードせずに結合するケースに対応
-    url = extractUrlParam(fullUrl);
+  // iOSショートカットがURLをエンコードせずに結合するケース: 生パースからも抽出して長い方を採用
+  const rawUrl = extractUrlParam(fullUrl);
+  if (rawUrl && (!url || rawUrl.length > url.length)) {
+    url = rawUrl;
+  }
+  if (!url && rawUrl) {
+    url = rawUrl;
   }
   // extractUrlParam がエンコード済みURLを返した場合にデコード
   if (url && url.includes("%3A%2F%2F")) {
@@ -59,6 +64,14 @@ export async function GET(request: NextRequest) {
   if (!url || !userId) {
     return new NextResponse(
       generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。", url, userId),
+      { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+    );
+  }
+
+  // user_id UUID検証
+  if (!isValidUserId(userId)) {
+    return new NextResponse(
+      generateHTML("❌ エラー", "ユーザーIDの形式が不正です。", url, userId),
       { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }
@@ -79,6 +92,14 @@ export async function GET(request: NextRequest) {
     } catch {
       return new NextResponse(
         generateHTML("❌ エラー", `URLの形式が正しくありません: ${escapeHtml(url)}`, url, userId),
+        { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
+      );
+    }
+
+    // SSRF対策: プライベートIP / localhost をブロック
+    if (!isSafeUrl(normalizedUrl)) {
+      return new NextResponse(
+        generateHTML("❌ エラー", "このURLにはアクセスできません。", normalizedUrl, userId),
         { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
       );
     }
