@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
   if (!url || !userId) {
     return new NextResponse(
-      generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。", url, userId),
+      generateHTML("❌ エラー", "URLまたはユーザーIDが不足しています。", url, userId, fullUrl),
       { status: 400, headers: { "Content-Type": "text/html; charset=utf-8" } }
     );
   }
@@ -176,9 +176,9 @@ export async function GET(request: NextRequest) {
 }
 
 /** 結果表示用のHTMLページ（デバッグ情報付き） */
-function generateHTML(title: string, message: string, url?: string | null, userId?: string | null): string {
-  const debugInfo = url || userId
-    ? `<p style="margin-top:1rem;font-size:10px;color:#94a3b8;word-break:break-all">user: ${escapeHtml(userId || "none")}<br>url: ${escapeHtml(url || "none")}</p>`
+function generateHTML(title: string, message: string, url?: string | null, userId?: string | null, rawRequestUrl?: string): string {
+  const debugInfo = url || userId || rawRequestUrl
+    ? `<p style="margin-top:1rem;font-size:10px;color:#94a3b8;word-break:break-all">user: ${escapeHtml(userId || "none")}<br>url: ${escapeHtml(url || "none")}${rawRequestUrl ? `<br><br>raw: ${escapeHtml(rawRequestUrl)}` : ""}</p>`
     : "";
   return `<!DOCTYPE html>
 <html lang="ja">
